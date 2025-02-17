@@ -79,7 +79,7 @@
   (let 
     (
       (sender tx-sender)
-      (current-block-height block-height)
+      (current-stacks-block-height stacks-block-height)
     )
     (begin
       (asserts! (is-none (map-get? identities {owner: sender})) 
@@ -93,8 +93,8 @@
         {
           did: did,
           reputation-score: u50,  ;; Starting reputation
-          created-at: current-block-height,
-          last-updated: current-block-height
+          created-at: current-stacks-block-height,
+          last-updated: current-stacks-block-height
         }
       )
       (ok did)
@@ -138,7 +138,7 @@
         {owner: owner}
         (merge current-identity {
           reputation-score: updated-score,
-          last-updated: block-height
+          last-updated: stacks-block-height
         })
       )
       (ok updated-score)
@@ -173,7 +173,7 @@
         {owner: owner}
         (merge current-identity {
           reputation-score: updated-score,
-          last-updated: block-height
+          last-updated: stacks-block-height
         })
       )
       (ok updated-score)
