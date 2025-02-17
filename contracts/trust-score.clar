@@ -101,3 +101,89 @@
     )
   )
 )
+
+;; Update Reputation Score
+(define-public (update-reputation 
+  (action-type (string-ascii 50))
+)
+  (let 
+    (
+      (owner tx-sender)
+      (current-identity 
+        (unwrap! 
+          (map-get? identities {owner: owner}) 
+          (err ERR-IDENTITY-NOT-FOUND)
+        )
+      )
+      (action-multiplier 
+        (default-to u0 
+          (get multiplier 
+            (map-get? reputation-actions {action-type: action-type})
+          )
+        )
+      )
+      (current-score (get reputation-score current-identity))
+      (updated-score 
+        (if (< (+ current-score action-multiplier) MAX-REPUTATION-SCORE)
+            (+ current-score action-multiplier)
+            MAX-REPUTATION-SCORE
+        )
+      )
+    )
+    (begin
+      (asserts! (is-some (map-get? reputation-actions {action-type: action-type}))
+        (err ERR-INVALID-PARAMETERS))
+
+      (map-set identities 
+        {owner: owner}
+        (merge current-identity {
+          reputation-score: updated-score,
+          last-updated: block-height
+        })
+      )
+      (ok updated-score)
+    )
+  )
+)
+
+;; Apply Time-Based Reputation Decay
+(define-public (decay-reputation)
+  (let 
+    (
+      (owner tx-sender)
+      (current-identity 
+        (unwrap! 
+          (map-get? identities {owner: owner}) 
+          (err ERR-IDENTITY-NOT-FOUND)
+        )
+      )
+      (current-score (get reputation-score current-identity))
+      (decay-amount 
+        (/ (* current-score REPUTATION-DECAY-RATE) u100)
+      )
+      (updated-score 
+        (if (> (- current-score decay-amount) MIN-REPUTATION-SCORE)
+            (- current-score decay-amount)
+            MIN-REPUTATION-SCORE
+        )
+      )
+    )
+    (begin
+      (map-set identities 
+        {owner: owner}
+        (merge current-identity {
+          reputation-score: updated-score,
+          last-updated: block-height
+        })
+      )
+      (ok updated-score)
+    )
+  )
+)
+
+;; Read-Only Functions
+
+;; Get Identity Reputation
+(define-read-only (get-reputation (owner principal))
+  (map-get? identities {owner: owner})
+)
